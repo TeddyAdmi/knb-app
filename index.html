@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>КНБ PKOIN — Decentralized Game</title>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #090A0F, #171925, #0B0E14);
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --accent-pink: #FF007A;
+      --accent-cyan: #00F6FF;
+      --accent-yellow: #FFDE59;
+      --accent-green: #00FF88;
+      --text-color: #FFFFFF;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg-gradient);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    /* Шапка */
+    header {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 25px;
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      margin-bottom: 25px;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: 900;
+      background: linear-gradient(45deg, var(--accent-cyan), var(--accent-pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .wallet-status {
+      font-size: 14px;
+      background: rgba(0, 246, 255, 0.1);
+      color: var(--accent-cyan);
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(0, 246, 255, 0.3);
+    }
+
+    /* Контейнеры экранов */
+    .screen {
+      width: 100%;
+      max-width: 900px;
+      display: none;
+      animation: fadeIn 0.4s ease-in-out forwards;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ЭКРАН 1: ЗАГРУЗКА ПАПКИ */
+    .upload-box {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 2px dashed var(--accent-cyan);
+      border-radius: 24px;
+      padding: 50px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 20px;
+    }
+
+    .upload-box:hover, .upload-box.dragover {
+      border-color: var(--accent-pink);
+      background: rgba(255, 0, 122, 0.05);
+      box-shadow: 0 0 30px rgba(255, 0, 122, 0.2);
+    }
+
+    .folder-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 15px;
+      background: linear-gradient(135deg, var(--accent-yellow), var(--accent-pink));
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(255, 0, 122, 0.4);
+    }
+
+    .folder-icon svg { width: 40px; height: 40px; fill: #fff; }
+
+    /* ЭКРАН 2: ВЫБОР КОМНАТ */
+    .rooms-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .room-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 18px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .room-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 10px 25px rgba(0, 246, 255, 0.2);
+    }
+
+    .room-bet {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--accent-yellow);
+      margin: 10px 0 5px;
+    }
+
+    .room-fee {
+      font-size: 11px;
+      color: #aaa;
+    }
+
+    /* ЭКРАН 3: АРЕНА ИГРЫ */
+    .arena-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .moves-grid {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 30px 0;
+    }
+
+    .move-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 20px;
+      font-size: 40px;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .move-btn:hover, .move-btn.selected {
+      border-color: var(--accent-pink);
+      background: rgba(255, 0, 122, 0.2);
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(255, 0, 122, 0.4);
+    }
+
+    /* Кнопки действия */
+    .btn-main {
+      background: linear-gradient(45deg, var(--accent-pink), var(--accent-cyan));
+      color: #fff;
+      border: none;
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 5px 20px rgba(0, 246, 255, 0.3);
+      transition: opacity 0.2s;
+    }
+
+    .btn-main:hover { opacity: 0.9; }
+
+    /* Таблица созданных столов */
+    .tables-list {
+      margin-top: 30px;
+      text-align: left;
+    }
+
+    .table-item {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.05);
+      padding: 12px 20px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Шапка -->
+  <header>
+    <div class="logo">🪨 ✂️ 📄 PKOIN Game</div>
+    <div class="wallet-status" id="walletAddr">Кошелек: Подключение...</div>
+  </header>
+
+  <!-- ШАГ 1: Загрузка локальной папки dApp -->
+  <div class="screen active" id="uploadScreen">
+    <div class="upload-box" id="dropZone" onclick="document.getElementById('folderInput').click()">
+      <div class="folder-icon">
+        <svg viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+      </div>
+      <h2 style="margin-bottom: 8px;">Выберите папку с приложением</h2>
+      <p style="color: #aaa; font-size: 14px; margin-bottom: 15px;">Загрузите структуру dApp или перетащите папку сюда</p>
+      <button class="btn-main">Обзор папки</button>
+      <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none;">
+    </div>
+  </div>
+
+  <!-- ШАГ 2: Главное Лобби (Выбор комнаты) -->
+  <div class="screen" id="lobbyScreen">
+    <h2 style="text-align: center; margin-bottom: 10px;">Выберите комнату ставок</h2>
+    <p style="text-align: center; color: #aaa; margin-bottom: 20px;">Победитель получает 95% банка. 5% — комиссия разработчика.</p>
+    
+    <div class="rooms-grid">
+      <div class="room-card" onclick="openRoom(1)">
+        <div>Комната 1</div>
+        <div class="room-bet">1 PKOIN</div>
+        <div class="room-fee">Выигрыш: 1.9 | Комиссия: 0.1</div>
+      </div>
+      <div class="room-card" onclick="openRoom(2)">
+        <div>Комната 2</div>
+        <div class="room-bet">2 PKOIN</div>
+        <div class="room-fee">Выигрыш: 3.8 | Комиссия: 0.2</div>
+      </div>
+      <div class="room-card" onclick="openRoom(3)">
+        <div>Комната 3</div>
+        <div class="room-bet">3 PKOIN</div>
+        <div class="room-fee">Выигрыш: 5.7 | Комиссия: 0.3</div>
+      </div>
+      <div class="room-card" onclick="openRoom(4)">
+        <div>Комната 4</div>
+        <div class="room-bet">4 PKOIN</div>
+        <div class="room-fee">Выигрыш: 7.6 | Комиссия: 0.4</div>
+      </div>
+      <div class="room-card" onclick="openRoom(5)">
+        <div>Комната 5</div>
+        <div class="room-bet">5 PKOIN</div>
+        <div class="room-fee">Выигрыш: 9.5 | Комиссия: 0.5</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ШАГ 3: Игра в комнате -->
+  <div class="screen" id="gameScreen">
+    <div style="margin-bottom: 15px;">
+      <button onclick="showScreen('lobbyScreen')" style="background:none; border:none; color:var(--accent-cyan); cursor:pointer;">← Назад в лобби</button>
+    </div>
+    <div class="arena-card">
+      <h2 id="currentRoomTitle">Комната 1 (Ставка: 1 PKOIN)</h2>
+      <p style="color:#aaa; font-size:14px; margin-top:5px;">Сделайте скрытый ход и создайте новый стол или подсоединитесь к существующему</p>
+
+      <div class="moves-grid">
+        <div class="move-btn" onclick="selectMove('rock', this)">🪨</div>
+        <div class="move-btn" onclick="selectMove('scissors', this)">✂️</div>
+        <div class="move-btn" onclick="selectMove('paper', this)">📄</div>
+      </div>
+
+      <button class="btn-main" onclick="createGame()">Создать стол и поставить PKOIN</button>
+
+      <div class="tables-list">
+        <h3 style="margin-bottom: 12px; font-size:16px;">Открытые столы игроков:</h3>
+        <div id="tablesContainer">
+          <div style="color:#666; font-size:13px;">Поиск открытых столов в блокчейне...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Адрес разработчика для получения комиссии (5%)
+    const DEV_WALLET = "PKOIN_YOUR_DEVELOPER_WALLET_ADDRESS_HERE";
+
+    let currentBet = 1;
+    let selectedMove = null;
+    let playerSalt = "";
+
+    // Функция переключения экранов
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+    }
+
+    // Обработка загрузки файлов
+    const folderInput = document.getElementById('folderInput');
+    folderInput.addEventListener('change', (e) => {
+      if(e.target.files.length > 0) {
+        // Папка выбрана — переходим в Лобби
+        showScreen('lobbyScreen');
+      }
+    });
+
+    // Вход в выбранную комнату
+    function openRoom(betAmount) {
+      currentBet = betAmount;
+      document.getElementById('currentRoomTitle').innerText = `Комната ${betAmount} (Ставка: ${betAmount} PKOIN)`;
+      showScreen('gameScreen');
+      loadOpenTables();
+    }
+
+    // Выбор хода (Камень / Ножницы / Бумага)
+    function selectMove(move, elem) {
+      selectedMove = move;
+      document.querySelectorAll('.move-btn').forEach(b => b.classList.remove('selected'));
+      elem.classList.add('selected');
+    }
+
+    // Генерация случайной соли (Salt) для генерации Hash (Commitment)
+    function generateSalt() {
+      return Math.random().toString(36).substring(2) + Date.now().toString(36);
+    }
+
+    // Простая хэш-функция для создания Commit (без сервера)
+    function createCommitHash(move, salt) {
+      return btoa(move + ":" + salt);
+    }
+
+    // Создание игры (Игрок 1 отправляет 1 PKOIN и Commitment)
+    async function createGame() {
+      if (!selectedMove) {
+        alert("Сначала выберите: Камень, Ножницы или Бумага!");
+        return;
+      }
+
+      playerSalt = generateSalt();
+      const commitHash = createCommitHash(selectedMove, playerSalt);
+
+      // Сохраняем локально секрет для последующего раскрытия (Reveal)
+      localStorage.setItem('pending_game_' + Date.now(), JSON.stringify({
+        move: selectedMove,
+        salt: playerSalt,
+        bet: currentBet
+      }));
+
+      alert(`Транзакция формируется!\nСтавка: ${currentBet} PKOIN\nХэш хода: ${commitHash}\n\nПодтвердите транзакцию в интерфейсе Bastyon.`);
+      
+      // Здесь вызывается API Bastyon/Pocketnet SDK:
+      /*
+        window.pocketnet.makeTransaction({
+          amount: currentBet,
+          payload: { action: "create_game", commit: commitHash, room: currentBet }
+        });
+      */
+    }
+
+    // Загрузка активных столов из блокчейна
+    function loadOpenTables() {
+      const container = document.getElementById('tablesContainer');
+      
+      // Имитация списка игр (в реальности запрашивается из узла Pocketnet via RPC)
+      container.innerHTML = `
+        <div class="table-item">
+          <div>Игрок: <b>P...x89f</b> | Ставка: <b>${currentBet} PKOIN</b></div>
+          <button class="btn-main" style="padding: 6px 16px; font-size:12px;" onclick="joinGame('game_101')">Присоединиться (${currentBet} PKOIN)</button>
+        </div>
+      `;
+    }
+
+    // Присоединение к игре (Игрок 2)
+    function joinGame(gameId) {
+      if (!selectedMove) {
+        alert("Выберите ваш ход перед подключением к столу!");
+        return;
+      }
+
+      alert(`Вы входите в стол ${gameId}.\nСтавка: ${currentBet} PKOIN.\n\nПодтвердите отправку монеты.`);
+      
+      // Расчет комиссий:
+      const totalBank = currentBet * 2;
+      const devFee = totalBank * 0.05; // 5% разработчику
+      const winAmount = totalBank - devFee; // 95% победителю
+
+      console.log(`Банк: ${totalBank}, Выигрыш: ${winAmount}, Комиссия на ${DEV_WALLET}: ${devFee}`);
+    }
+
+    // Инициализация (запрос адреса кошелька Bastyon)
+    window.addEventListener('load', () => {
+      // Имитация получения PKOIN-кошелька
+      document.getElementById('walletAddr').innerText = "Кошелек: P...a71b (Подключен)";
+    });
+  </script>
+</body>
+</html>
