@@ -6,7 +6,28 @@
   <title>КНБ PKOIN</title>
   
   <!-- Bastyon SDK -->
-  <script src="https://pocketnet.app/js/vendor/pocketnet-app.js"></script>
+  <!-- Подключение SDK с фоллбэком -->
+<script src="https://pocketnet.app/js/vendor/pocketnet-app.js" onerror="window.make = window.make || {};"></script>
+
+<script>
+  // Гарантированный handshake сигнал
+  function sendHandshake() {
+    try {
+      window.parent.postMessage({ type: 'bastyon-app-ready', status: 'listening', action: 'app-init' }, '*');
+      window.parent.postMessage('application:ready', '*');
+    } catch(e) {}
+  }
+
+  sendHandshake();
+  document.addEventListener('DOMContentLoaded', sendHandshake);
+  window.addEventListener('load', sendHandshake);
+
+  window.addEventListener('message', (e) => {
+    if (e.data && (e.data === 'ping' || e.data.type === 'bastyon-ping')) {
+      e.source.postMessage({ type: 'bastyon-pong', action: 'pong' }, e.origin || '*');
+    }
+  });
+</script>
 
   <!-- Скрипт Handshake для удержания iframe Bastyon -->
   <script>
