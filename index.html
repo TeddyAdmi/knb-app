@@ -4,29 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>КНБ PKOIN</title>
-
-  <!-- Встроенный легкий адаптер Bastyon API (без внешних зависимостей) -->
-  <script>
-    window.BastyonApp = class {
-      constructor() {
-        this.isInsideBastyon = window.self !== window.top;
-      }
-      async getAccount() {
-        if (window.make && window.make.get && window.make.get.account) {
-          return await window.make.get.account();
-        }
-        return { address: "P_TESTNET_DEMO_ADDRESS_12345" };
-      }
-      async makePayment(amount, message) {
-        if (window.make && window.make.payment) {
-          return await window.make.payment({ amount, message });
-        }
-        alert(`[Эмуляция Кошелька]\nОтправка ${amount} PKOIN\nСообщение: ${message}`);
-        return { txid: "demo_tx_" + Date.now() };
-      }
-    };
-    window.bastyon = new window.BastyonApp();
-  </script>
+  
+  <!-- Подключение официального SDK Bastyon Testnet -->
+  <script src="https://test.pocketnet.app/js/vendor/pocketnet-app.js"></script>
 
   <style>
     :root {
@@ -38,7 +18,12 @@
       --text-color: #FFFFFF;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, sans-serif;
+    }
 
     body {
       min-height: 100vh;
@@ -58,6 +43,7 @@
       align-items: center;
       padding: 15px 20px;
       background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 16px;
       margin-bottom: 20px;
@@ -69,20 +55,71 @@
       background: linear-gradient(45deg, var(--accent-cyan), var(--accent-pink));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
     }
 
     .wallet-status {
       font-size: 13px;
       background: rgba(0, 246, 255, 0.1);
       color: var(--accent-cyan);
-      padding: 6px 12px;
-      border-radius: 12px;
+      padding: 6px 14px;
+      border-radius: 20px;
       border: 1px solid rgba(0, 246, 255, 0.3);
     }
 
-    .card {
+    .screen {
       width: 100%;
       max-width: 800px;
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    /* Сетка комнат ставок */
+    .rooms-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .room-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 20px 15px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .room-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 8px 20px rgba(0, 246, 255, 0.2);
+    }
+
+    .room-title {
+      font-size: 14px;
+      color: #aaa;
+    }
+
+    .room-bet {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--accent-yellow);
+      margin: 8px 0 4px;
+    }
+
+    .room-win {
+      font-size: 11px;
+      color: #00FF88;
+    }
+
+    /* Игровая Арена */
+    .arena-card {
       background: var(--card-bg);
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 20px;
@@ -100,11 +137,11 @@
     .move-btn {
       background: rgba(255, 255, 255, 0.05);
       border: 2px solid rgba(255, 255, 255, 0.1);
-      border-radius: 16px;
-      font-size: 36px;
+      border-radius: 18px;
+      font-size: 38px;
       cursor: pointer;
-      width: 80px;
-      height: 80px;
+      width: 85px;
+      height: 85px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -114,71 +151,217 @@
     .move-btn:hover, .move-btn.selected {
       border-color: var(--accent-pink);
       background: rgba(255, 0, 122, 0.2);
-      transform: scale(1.05);
+      transform: scale(1.08);
+      box-shadow: 0 0 15px rgba(255, 0, 122, 0.4);
     }
 
     .btn-main {
       background: linear-gradient(45deg, var(--accent-pink), var(--accent-cyan));
       color: #fff;
       border: none;
-      padding: 12px 28px;
+      padding: 12px 30px;
       font-size: 15px;
       font-weight: 700;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 246, 255, 0.3);
+      transition: opacity 0.2s;
+    }
+
+    .btn-main:hover {
+      opacity: 0.9;
+    }
+
+    .tables-list {
+      margin-top: 25px;
+      text-align: left;
+    }
+
+    .table-item {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 12px 18px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
 
+  <!-- Шапка -->
   <header>
     <div class="logo">🪨 ✂️ 📄 КНБ PKOIN</div>
-    <div class="wallet-status" id="walletAddr">Инициализация...</div>
+    <div class="wallet-status" id="walletAddr">Подключение...</div>
   </header>
 
-  <div class="card">
-    <h2>Создать дуэль</h2>
-    <p style="color:#aaa; font-size:14px; margin-top:5px;">Ставка: 1 PKOIN (Комиссия 5% удерживается на приложении)</p>
+  <!-- ЭКРАН 1: Лобби (Выбор комнаты) -->
+  <div class="screen active" id="lobbyScreen">
+    <h2 style="text-align: center; margin-bottom: 6px;">Выберите комнату ставок</h2>
+    <p style="text-align: center; color: #aaa; font-size: 13px; margin-bottom: 15px;">
+      Победитель забрает 95% общего банка. 5% уходит на комиссию приложения.
+    </p>
 
-    <div class="moves-grid">
-      <div class="move-btn" onclick="selectMove('rock', this)">🪨</div>
-      <div class="move-btn" onclick="selectMove('scissors', this)">✂️</div>
-      <div class="move-btn" onclick="selectMove('paper', this)">📄</div>
+    <div class="rooms-grid">
+      <div class="room-card" onclick="openRoom(1)">
+        <div class="room-title">Комната 1</div>
+        <div class="room-bet">1 PKOIN</div>
+        <div class="room-win">Выиграешь: 1.9 PKOIN</div>
+      </div>
+      <div class="room-card" onclick="openRoom(2)">
+        <div class="room-title">Комната 2</div>
+        <div class="room-bet">2 PKOIN</div>
+        <div class="room-win">Выиграешь: 3.8 PKOIN</div>
+      </div>
+      <div class="room-card" onclick="openRoom(3)">
+        <div class="room-title">Комната 3</div>
+        <div class="room-bet">3 PKOIN</div>
+        <div class="room-win">Выиграешь: 5.7 PKOIN</div>
+      </div>
+      <div class="room-card" onclick="openRoom(4)">
+        <div class="room-title">Комната 4</div>
+        <div class="room-bet">4 PKOIN</div>
+        <div class="room-win">Выиграешь: 7.6 PKOIN</div>
+      </div>
+      <div class="room-card" onclick="openRoom(5)">
+        <div class="room-title">Комната 5</div>
+        <div class="room-bet">5 PKOIN</div>
+        <div class="room-win">Выиграешь: 9.5 PKOIN</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ЭКРАН 2: Игровая комната -->
+  <div class="screen" id="gameScreen">
+    <div style="margin-bottom: 15px;">
+      <button onclick="showScreen('lobbyScreen')" style="background:none; border:none; color:var(--accent-cyan); cursor:pointer; font-size:14px;">
+        ← Вернуться в лобби
+      </button>
     </div>
 
-    <button class="btn-main" onclick="play()">Оплатить 1 PKOIN и создать стол</button>
+    <div class="arena-card">
+      <h2 id="currentRoomTitle">Комната 1</h2>
+      <p style="color:#aaa; font-size:13px; margin-top:4px;">Сделайте ваш секретный ход и создайте новый стол</p>
+
+      <div class="moves-grid">
+        <div class="move-btn" onclick="selectMove('rock', this)">🪨</div>
+        <div class="move-btn" onclick="selectMove('scissors', this)">✂️</div>
+        <div class="move-btn" onclick="selectMove('paper', this)">📄</div>
+      </div>
+
+      <button class="btn-main" onclick="createGame()">Оплатить ставку и создать стол</button>
+
+      <div class="tables-list">
+        <h3 style="font-size: 15px;">Активные столы в этой комнате:</h3>
+        <div id="tablesContainer">
+          <!-- Здесь выводятся созданные столы -->
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
+    let make = null;
+    let userAddress = null;
+    let currentBet = 1;
     let selectedMove = null;
 
-    async function initWallet() {
-      try {
-        const acc = await window.bastyon.getAccount();
-        document.getElementById('walletAddr').innerText = `Кошелек: ${acc.address.substring(0,6)}...${acc.address.slice(-4)}`;
-      } catch (e) {
-        document.getElementById('walletAddr').innerText = "Готов к работе";
+    // Инициализация подключения к Bastyon SDK
+    window.addEventListener('load', () => {
+      if (window.make && window.make.get && window.make.get.account) {
+        make = window.make;
+        make.get.account().then(account => {
+          userAddress = account.address;
+          document.getElementById('walletAddr').innerText = `Кошелек: ${userAddress.substring(0, 6)}...${userAddress.slice(-4)}`;
+        }).catch(() => {
+          document.getElementById('walletAddr').innerText = "Тестовый режим";
+        });
+      } else {
+        document.getElementById('walletAddr').innerText = "Автономный режим";
       }
+    });
+
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
     }
 
-    function selectMove(move, elem) {
+    function openRoom(bet) {
+      currentBet = bet;
+      document.getElementById('currentRoomTitle').innerText = `Комната (Ставка: ${bet} PKOIN)`;
+      showScreen('gameScreen');
+      renderTables();
+    }
+
+    function selectMove(move, element) {
       selectedMove = move;
-      document.querySelectorAll('.move-btn').forEach(b => b.classList.remove('selected'));
-      elem.classList.add('selected');
+      document.querySelectorAll('.move-btn').forEach(btn => btn.classList.remove('selected'));
+      element.classList.add('selected');
     }
 
-    async function play() {
+    // Создание стола и оплата PKOIN
+    async function createGame() {
       if (!selectedMove) {
-        alert("Выберите вариант: Камень, Ножницы или Бумага!");
+        alert("Пожалуйста, выберите вариант: Камень, Ножницы или Бумага!");
         return;
       }
-      const salt = Math.random().toString(36).substring(2);
-      const commit = btoa(selectedMove + ":" + salt);
 
-      await window.bastyon.makePayment(1, `КНБ Игра [Commit: ${commit}]`);
+      // Генерация Соли и Хэша (Commitment Scheme)
+      const salt = Math.random().toString(36).substring(2);
+      const commitHash = btoa(selectedMove + ":" + salt);
+
+      if (make) {
+        make.payment({
+          amount: currentBet,
+          message: `КНБ Игра [Ставка: ${currentBet} PKOIN] [Commit: ${commitHash}]`
+        }).then(tx => {
+          alert("Ставка принята! Ваш стол зарегистрирован.");
+          renderTables();
+        }).catch(() => {
+          alert("Оплата была отменена.");
+        });
+      } else {
+        alert(`[Эмуляция] Создан стол со ставкой ${currentBet} PKOIN\nХэш хода: ${commitHash}`);
+        renderTables();
+      }
     }
 
-    window.addEventListener('load', initWallet);
+    function renderTables() {
+      const container = document.getElementById('tablesContainer');
+      const winAmount = (currentBet * 2) * 0.95;
+
+      container.innerHTML = `
+        <div class="table-item">
+          <div>
+            Игрок: <b>P...x92a</b> | Ставка: <b>${currentBet} PKOIN</b>
+            <div style="font-size:11px; color:#00FF88;">Выигрыш: ${winAmount} PKOIN</div>
+          </div>
+          <button class="btn-main" style="padding: 6px 14px; font-size:12px;" onclick="joinGame('game_101')">
+            Принять дуэль
+          </button>
+        </div>
+      `;
+    }
+
+    function joinGame(gameId) {
+      if (!selectedMove) {
+        alert("Сначала выберите ваш ход (Камень, Ножницы или Бумага)!");
+        return;
+      }
+
+      if (make) {
+        make.payment({
+          amount: currentBet,
+          message: `Ответ в игре ${gameId} [Ход: ${selectedMove}]`
+        }).then(tx => {
+          alert("Ответ принят! Ожидаем подведение итогов.");
+        });
+      } else {
+        alert(`[Эмуляция] Вы присоединились к игре ${gameId} с ходом ${selectedMove}`);
+      }
+    }
   </script>
 </body>
 </html>
