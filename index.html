@@ -5,49 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>КНБ PKOIN</title>
   
-  <!-- Bastyon SDK -->
-  <!-- Подключение SDK с фоллбэком -->
-<script src="https://pocketnet.app/js/vendor/pocketnet-app.js" onerror="window.make = window.make || {};"></script>
+  <!-- Подключение официального SDK Bastyon (с фоллбэком на случай сбоя CDN) -->
+  <script src="https://pocketnet.app/js/vendor/pocketnet-app.js" onerror="window.make = window.make || {};"></script>
 
-<script>
-  // Гарантированный handshake сигнал
-  function sendHandshake() {
-    try {
-      window.parent.postMessage({ type: 'bastyon-app-ready', status: 'listening', action: 'app-init' }, '*');
-      window.parent.postMessage('application:ready', '*');
-    } catch(e) {}
-  }
-
-  sendHandshake();
-  document.addEventListener('DOMContentLoaded', sendHandshake);
-  window.addEventListener('load', sendHandshake);
-
-  window.addEventListener('message', (e) => {
-    if (e.data && (e.data === 'ping' || e.data.type === 'bastyon-ping')) {
-      e.source.postMessage({ type: 'bastyon-pong', action: 'pong' }, e.origin || '*');
-    }
-  });
-</script>
-
-  <!-- Скрипт Handshake для удержания iframe Bastyon -->
+  <!-- Гарантированный Handshake для Bastyon Shell -->
   <script>
-    function sendBastyonInit() {
-      // Отправляем регулярный сигнал readiness в родительское окно
-      window.parent.postMessage({ action: 'app-init', state: 'ready' }, '*');
-      window.parent.postMessage('application:ready', '*');
-      window.parent.postMessage({ type: 'bastyon-app-ready', status: 'listening' }, '*');
+    function sendBastyonHandshake() {
+      try {
+        window.parent.postMessage({ type: 'bastyon-app-ready', status: 'listening', action: 'app-init' }, '*');
+        window.parent.postMessage('application:ready', '*');
+      } catch (e) {
+        console.error('Handshake send error:', e);
+      }
     }
 
-    // Запускаем отправку сразу и по завершении загрузки DOM
-    sendBastyonInit();
-    document.addEventListener('DOMContentLoaded', sendBastyonInit);
-    window.addEventListener('load', sendBastyonInit);
+    // Отправляем handshake на всех этапах загрузки страницы
+    sendBastyonHandshake();
+    document.addEventListener('DOMContentLoaded', sendBastyonHandshake);
+    window.addEventListener('load', sendBastyonHandshake);
 
-    // Обработчик пингов от оболочки Bastyon
+    // Отвечаем на пинги проверки активности от Bastyon
     window.addEventListener('message', (event) => {
       if (event.data) {
         if (event.data === 'ping' || event.data.type === 'bastyon-ping' || event.data.action === 'ping') {
-          event.source.postMessage({ type: 'bastyon-pong', action: 'pong', status: 'listening' }, event.origin || '*');
+          if (event.source) {
+            event.source.postMessage({ type: 'bastyon-pong', action: 'pong', status: 'listening' }, event.origin || '*');
+          }
         }
       }
     });
@@ -260,7 +243,7 @@
     </div>
   </div>
 
-  <!-- Игровая комната -->
+  <!-- Игровая арена -->
   <div class="screen" id="gameScreen">
     <div style="margin-bottom: 15px;">
       <button onclick="showScreen('lobbyScreen')" style="background:none; border:none; color:var(--accent-cyan); cursor:pointer; font-size:14px;">
@@ -294,7 +277,7 @@
     let selectedMove = null;
 
     window.addEventListener('load', () => {
-      sendBastyonInit();
+      sendBastyonHandshake();
 
       if (window.make && window.make.get && window.make.get.account) {
         make = window.make;
