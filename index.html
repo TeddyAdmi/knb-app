@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>КНБ PKOIN — Decentralized Game</title>
   
-  <!-- Подключение официального SDK Bastyon / Pocketnet -->
-  <script src="https://test.pocketnet.app/js/vendor/pocketnet-app.js"></script>
+  <!-- Подключение официального SDK Bastyon Mainnet -->
+  <script src="https://bastyon.com/js/vendor/pocketnet-app.js"></script>
 
   <style>
     :root {
@@ -252,12 +252,12 @@
   </div>
 
   <script>
-    let make = null; // SDK Bastyon
+    let make = null; // Bastyon Mainnet SDK
     let userAddress = null;
     let currentBet = 1;
     let selectedMove = null;
 
-    // Инициализация при загрузке
+    // Инициализация Bastyon SDK
     window.addEventListener('load', () => {
       if (window.make) {
         make = window.make;
@@ -268,7 +268,7 @@
           document.getElementById('walletAddr').innerText = "Ошибка авторизации";
         });
       } else {
-        document.getElementById('walletAddr').innerText = "Тестовый режим (вне Bastyon)";
+        document.getElementById('walletAddr').innerText = "Автономный режим";
       }
     });
 
@@ -290,7 +290,7 @@
       elem.classList.add('selected');
     }
 
-    // Создание стола (Перевод PKOIN на кошелек приложения)
+    // Создание стола и запуск PKOIN-транзакции
     async function createGame() {
       if (!selectedMove) {
         alert("Выберите ваш ход: Камень, Ножницы или Бумага!");
@@ -305,20 +305,19 @@
           amount: currentBet,
           message: `КНБ Игра [Ставка: ${currentBet} PKOIN] [Commit: ${commitHash}]`
         }).then(tx => {
-          alert("Ставка принята! Ваш стол создан.");
+          alert("Транзакция отправлена! Ваш стол зарегистрирован в блокчейне.");
           loadTables();
         }).catch(() => {
           alert("Оплата отменена.");
         });
       } else {
-        alert(`[Тестовый режим] Создан стол со ставкой ${currentBet} PKOIN`);
+        alert(`[Тест] Создан стол со ставкой ${currentBet} PKOIN`);
       }
     }
 
-    // Загрузка списка столов
     function loadTables() {
       const container = document.getElementById('tablesContainer');
-      const winAmount = (currentBet * 2) * 0.95; // 95% банку победителю
+      const winAmount = (currentBet * 2) * 0.95;
 
       container.innerHTML = `
         <div class="table-item">
@@ -328,7 +327,6 @@
       `;
     }
 
-    // Присоединение к столу
     function joinGame(gameId) {
       if (!selectedMove) {
         alert("Выберите ваш ход перед ответом!");
@@ -340,10 +338,10 @@
           amount: currentBet,
           message: `Ответ в игре ${gameId} [Ход: ${selectedMove}]`
         }).then(tx => {
-          alert("Вы успешно сделали ход! Выигрыш определится автоматически.");
+          alert("Ход принят! Результат запишется в сеть.");
         });
       } else {
-        alert(`[Тестовый режим] Вы вошли в игру ${gameId}`);
+        alert(`[Тест] Ответ в игре ${gameId}`);
       }
     }
   </script>
