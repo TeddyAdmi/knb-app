@@ -1,8 +1,8 @@
 {
   "id": "knb.pkoin.app",
   "name": "КНБ PKOIN",
-  "description": "Децентрализованная игра Камень Ножницы Бумага на PKOIN",
+  "description": "Децентрализованная игра Камень Ножницы Бумага",
   "author": "YVhVZ7q18SxV7VrmA5n8YUf9fkNrDZKM4A",
-  "scope": "teddyadmi.github.io",
+  "scope": "knb-app.vercel.app",
   "permissions": ["account", "payment", "sign"]
 }
