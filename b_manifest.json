@@ -2,6 +2,7 @@
   "id": "knb.pkoin.app",
   "name": "КНБ PKOIN",
   "description": "Децентрализованная игра Камень Ножницы Бумага на PKOIN",
-  "author": "TSBRUhPWre3D23gpdsCYo3RpoAybt7YuDT",
+  "author": "YVhVZ7q18SxV7VrmA5n8YUf9fkNrDZKM4A",
+  "scope": "teddyadmi.github.io",
   "permissions": ["account", "payment", "sign"]
 }
