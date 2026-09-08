@@ -5,26 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>КНБ PKOIN</title>
   
-  <!-- Подключение официального SDK Bastyon (с фоллбэком на случай сбоя CDN) -->
-  <script src="https://pocketnet.app/js/vendor/pocketnet-app.js" onerror="window.make = window.make || {};"></script>
-
-  <!-- Гарантированный Handshake для Bastyon Shell -->
+  <!-- Инициализация встроенного API Bastyon без внешних CDN-скриптов -->
   <script>
+    // Используем встроенный объект, пробрасываемый платформой Bastyon
+    window.make = window.make || window.pocketnet || {};
+
     function sendBastyonHandshake() {
       try {
         window.parent.postMessage({ type: 'bastyon-app-ready', status: 'listening', action: 'app-init' }, '*');
         window.parent.postMessage('application:ready', '*');
       } catch (e) {
-        console.error('Handshake send error:', e);
+        console.error('Handshake error:', e);
       }
     }
 
-    // Отправляем handshake на всех этапах загрузки страницы
+    // Сигналы активности на всех этапах загрузки
     sendBastyonHandshake();
     document.addEventListener('DOMContentLoaded', sendBastyonHandshake);
     window.addEventListener('load', sendBastyonHandshake);
 
-    // Отвечаем на пинги проверки активности от Bastyon
+    // Ответы на пинг-запросы от контейнера Bastyon
     window.addEventListener('message', (event) => {
       if (event.data) {
         if (event.data === 'ping' || event.data.type === 'bastyon-ping' || event.data.action === 'ping') {
@@ -243,7 +243,7 @@
     </div>
   </div>
 
-  <!-- Игровая арена -->
+  <!-- Игровая комната -->
   <div class="screen" id="gameScreen">
     <div style="margin-bottom: 15px;">
       <button onclick="showScreen('lobbyScreen')" style="background:none; border:none; color:var(--accent-cyan); cursor:pointer; font-size:14px;">
@@ -279,13 +279,14 @@
     window.addEventListener('load', () => {
       sendBastyonHandshake();
 
-      if (window.make && window.make.get && window.make.get.account) {
-        make = window.make;
+      const sdk = window.make || window.pocketnet;
+      if (sdk && sdk.get && sdk.get.account) {
+        make = sdk;
         make.get.account().then(account => {
           userAddress = account.address;
           document.getElementById('walletAddr').innerText = `Кошелек: ${userAddress.substring(0, 6)}...${userAddress.slice(-4)}`;
         }).catch(() => {
-          document.getElementById('walletAddr').innerText = "Тестовый режим";
+          document.getElementById('walletAddr').innerText = "Автономный режим";
         });
       } else {
         document.getElementById('walletAddr').innerText = "Автономный режим";
@@ -319,7 +320,7 @@
       const salt = Math.random().toString(36).substring(2);
       const commitHash = btoa(selectedMove + ":" + salt);
 
-      if (make) {
+      if (make && make.payment) {
         make.payment({
           amount: currentBet,
           message: `КНБ [Ставка: ${currentBet} PKOIN] [Commit: ${commitHash}]`
@@ -358,7 +359,7 @@
         return;
       }
 
-      if (make) {
+      if (make && make.payment) {
         make.payment({
           amount: currentBet,
           message: `Ответ в игре ${gameId} [Ход: ${selectedMove}]`
