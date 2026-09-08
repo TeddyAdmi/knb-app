@@ -7,7 +7,19 @@
   
   <!-- Подключение официального SDK Bastyon Testnet -->
   <script src="https://test.pocketnet.app/js/vendor/pocketnet-app.js"></script>
+<script>
+  // Отправка сигнала готовности родительскому окну Bastyon
+  window.addEventListener('load', () => {
+    window.parent.postMessage({ type: 'bastyon-app-ready', status: 'listening' }, '*');
+  });
 
+  // Ответ на проверку активности от Bastyon
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'bastyon-ping') {
+      event.source.postMessage({ type: 'bastyon-pong' }, event.origin);
+    }
+  });
+</script>
   <style>
     :root {
       --bg-gradient: linear-gradient(135deg, #090A0F, #171925, #0B0E14);
