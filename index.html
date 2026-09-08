@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>КНБ PKOIN — Decentralized Game</title>
+  <title>КНБ PKOIN — Testnet Game</title>
   
-  <!-- Подключение официального SDK Bastyon Mainnet -->
-  <script src="https://bastyon.com/js/vendor/pocketnet-app.js"></script>
+  <!-- Подключение SDK для тестового сервера -->
+  <script src="https://test.pocketnet.app/js/vendor/pocketnet-app.js"></script>
 
   <style>
     :root {
@@ -188,7 +188,7 @@
   <!-- Шапка -->
   <header>
     <div class="logo">🪨 ✂️ 📄 PKOIN Game</div>
-    <div class="wallet-status" id="walletAddr">Подключение к Bastyon...</div>
+    <div class="wallet-status" id="walletAddr">Подключение...</div>
   </header>
 
   <!-- ЭКРАН 1: Выбор комнаты -->
@@ -252,12 +252,11 @@
   </div>
 
   <script>
-    let make = null; // Bastyon Mainnet SDK
+    let make = null;
     let userAddress = null;
     let currentBet = 1;
     let selectedMove = null;
 
-    // Инициализация Bastyon SDK
     window.addEventListener('load', () => {
       if (window.make) {
         make = window.make;
@@ -268,7 +267,7 @@
           document.getElementById('walletAddr').innerText = "Ошибка авторизации";
         });
       } else {
-        document.getElementById('walletAddr').innerText = "Автономный режим";
+        document.getElementById('walletAddr').innerText = "Тестовый режим";
       }
     });
 
@@ -290,7 +289,6 @@
       elem.classList.add('selected');
     }
 
-    // Создание стола и запуск PKOIN-транзакции
     async function createGame() {
       if (!selectedMove) {
         alert("Выберите ваш ход: Камень, Ножницы или Бумага!");
@@ -305,7 +303,7 @@
           amount: currentBet,
           message: `КНБ Игра [Ставка: ${currentBet} PKOIN] [Commit: ${commitHash}]`
         }).then(tx => {
-          alert("Транзакция отправлена! Ваш стол зарегистрирован в блокчейне.");
+          alert("Ставка принята!");
           loadTables();
         }).catch(() => {
           alert("Оплата отменена.");
@@ -338,7 +336,7 @@
           amount: currentBet,
           message: `Ответ в игре ${gameId} [Ход: ${selectedMove}]`
         }).then(tx => {
-          alert("Ход принят! Результат запишется в сеть.");
+          alert("Ход принят!");
         });
       } else {
         alert(`[Тест] Ответ в игре ${gameId}`);
