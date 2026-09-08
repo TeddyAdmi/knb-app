@@ -5,21 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>КНБ PKOIN</title>
   
-  <!-- Подключение официального SDK Bastyon Testnet -->
+  <!-- Bastyon SDK -->
   <script src="https://test.pocketnet.app/js/vendor/pocketnet-app.js"></script>
-<script>
-  // Отправка сигнала готовности родительскому окну Bastyon
-  window.addEventListener('load', () => {
-    window.parent.postMessage({ type: 'bastyon-app-ready', status: 'listening' }, '*');
-  });
 
-  // Ответ на проверку активности от Bastyon
-  window.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'bastyon-ping') {
-      event.source.postMessage({ type: 'bastyon-pong' }, event.origin);
+  <!-- Скрипт Handshake для удержания iframe Bastyon -->
+  <script>
+    function sendBastyonInit() {
+      // Отправляем регулярный сигнал readiness в родительское окно
+      window.parent.postMessage({ action: 'app-init', state: 'ready' }, '*');
+      window.parent.postMessage('application:ready', '*');
+      window.parent.postMessage({ type: 'bastyon-app-ready', status: 'listening' }, '*');
     }
-  });
-</script>
+
+    // Запускаем отправку сразу и по завершении загрузки DOM
+    sendBastyonInit();
+    document.addEventListener('DOMContentLoaded', sendBastyonInit);
+    window.addEventListener('load', sendBastyonInit);
+
+    // Обработчик пингов от оболочки Bastyon
+    window.addEventListener('message', (event) => {
+      if (event.data) {
+        if (event.data === 'ping' || event.data.type === 'bastyon-ping' || event.data.action === 'ping') {
+          event.source.postMessage({ type: 'bastyon-pong', action: 'pong', status: 'listening' }, event.origin || '*');
+        }
+      }
+    });
+  </script>
+
   <style>
     :root {
       --bg-gradient: linear-gradient(135deg, #090A0F, #171925, #0B0E14);
@@ -89,7 +101,6 @@
       display: block;
     }
 
-    /* Сетка комнат ставок */
     .rooms-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -113,24 +124,10 @@
       box-shadow: 0 8px 20px rgba(0, 246, 255, 0.2);
     }
 
-    .room-title {
-      font-size: 14px;
-      color: #aaa;
-    }
+    .room-title { font-size: 14px; color: #aaa; }
+    .room-bet { font-size: 24px; font-weight: 800; color: var(--accent-yellow); margin: 8px 0 4px; }
+    .room-win { font-size: 11px; color: #00FF88; }
 
-    .room-bet {
-      font-size: 24px;
-      font-weight: 800;
-      color: var(--accent-yellow);
-      margin: 8px 0 4px;
-    }
-
-    .room-win {
-      font-size: 11px;
-      color: #00FF88;
-    }
-
-    /* Игровая Арена */
     .arena-card {
       background: var(--card-bg);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -180,9 +177,7 @@
       transition: opacity 0.2s;
     }
 
-    .btn-main:hover {
-      opacity: 0.9;
-    }
+    .btn-main:hover { opacity: 0.9; }
 
     .tables-list {
       margin-top: 25px;
@@ -203,17 +198,16 @@
 </head>
 <body>
 
-  <!-- Шапка -->
   <header>
     <div class="logo">🪨 ✂️ 📄 КНБ PKOIN</div>
     <div class="wallet-status" id="walletAddr">Подключение...</div>
   </header>
 
-  <!-- ЭКРАН 1: Лобби (Выбор комнаты) -->
+  <!-- Лобби комнат -->
   <div class="screen active" id="lobbyScreen">
     <h2 style="text-align: center; margin-bottom: 6px;">Выберите комнату ставок</h2>
     <p style="text-align: center; color: #aaa; font-size: 13px; margin-bottom: 15px;">
-      Победитель забрает 95% общего банка. 5% уходит на комиссию приложения.
+      Победитель забирает 95% банка. 5% — комиссия сервиса.
     </p>
 
     <div class="rooms-grid">
@@ -245,7 +239,7 @@
     </div>
   </div>
 
-  <!-- ЭКРАН 2: Игровая комната -->
+  <!-- Игровая комната -->
   <div class="screen" id="gameScreen">
     <div style="margin-bottom: 15px;">
       <button onclick="showScreen('lobbyScreen')" style="background:none; border:none; color:var(--accent-cyan); cursor:pointer; font-size:14px;">
@@ -255,7 +249,7 @@
 
     <div class="arena-card">
       <h2 id="currentRoomTitle">Комната 1</h2>
-      <p style="color:#aaa; font-size:13px; margin-top:4px;">Сделайте ваш секретный ход и создайте новый стол</p>
+      <p style="color:#aaa; font-size:13px; margin-top:4px;">Сделайте ход и создайте стол</p>
 
       <div class="moves-grid">
         <div class="move-btn" onclick="selectMove('rock', this)">🪨</div>
@@ -266,10 +260,8 @@
       <button class="btn-main" onclick="createGame()">Оплатить ставку и создать стол</button>
 
       <div class="tables-list">
-        <h3 style="font-size: 15px;">Активные столы в этой комнате:</h3>
-        <div id="tablesContainer">
-          <!-- Здесь выводятся созданные столы -->
-        </div>
+        <h3 style="font-size: 15px;">Активные столы:</h3>
+        <div id="tablesContainer"></div>
       </div>
     </div>
   </div>
@@ -280,8 +272,9 @@
     let currentBet = 1;
     let selectedMove = null;
 
-    // Инициализация подключения к Bastyon SDK
     window.addEventListener('load', () => {
+      sendBastyonInit();
+
       if (window.make && window.make.get && window.make.get.account) {
         make = window.make;
         make.get.account().then(account => {
@@ -313,29 +306,27 @@
       element.classList.add('selected');
     }
 
-    // Создание стола и оплата PKOIN
     async function createGame() {
       if (!selectedMove) {
-        alert("Пожалуйста, выберите вариант: Камень, Ножницы или Бумага!");
+        alert("Выберите вариант: Камень, Ножницы или Бумага!");
         return;
       }
 
-      // Генерация Соли и Хэша (Commitment Scheme)
       const salt = Math.random().toString(36).substring(2);
       const commitHash = btoa(selectedMove + ":" + salt);
 
       if (make) {
         make.payment({
           amount: currentBet,
-          message: `КНБ Игра [Ставка: ${currentBet} PKOIN] [Commit: ${commitHash}]`
-        }).then(tx => {
-          alert("Ставка принята! Ваш стол зарегистрирован.");
+          message: `КНБ [Ставка: ${currentBet} PKOIN] [Commit: ${commitHash}]`
+        }).then(() => {
+          alert("Ставка принята!");
           renderTables();
         }).catch(() => {
-          alert("Оплата была отменена.");
+          alert("Оплата отменена.");
         });
       } else {
-        alert(`[Эмуляция] Создан стол со ставкой ${currentBet} PKOIN\nХэш хода: ${commitHash}`);
+        alert(`[Эмуляция] Создан стол со ставкой ${currentBet} PKOIN`);
         renderTables();
       }
     }
@@ -359,7 +350,7 @@
 
     function joinGame(gameId) {
       if (!selectedMove) {
-        alert("Сначала выберите ваш ход (Камень, Ножницы или Бумага)!");
+        alert("Сначала выберите ход!");
         return;
       }
 
@@ -367,11 +358,11 @@
         make.payment({
           amount: currentBet,
           message: `Ответ в игре ${gameId} [Ход: ${selectedMove}]`
-        }).then(tx => {
-          alert("Ответ принят! Ожидаем подведение итогов.");
+        }).then(() => {
+          alert("Ответ принят!");
         });
       } else {
-        alert(`[Эмуляция] Вы присоединились к игре ${gameId} с ходом ${selectedMove}`);
+        alert(`[Эмуляция] Вы присоединились к игре ${gameId}`);
       }
     }
   </script>
